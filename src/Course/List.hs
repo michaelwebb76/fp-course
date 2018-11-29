@@ -52,11 +52,11 @@ infinity =
 -- functions over List that you may consider using
 foldRight :: (a -> b -> b) -> b -> List a -> b
 foldRight _ b Nil      = b
-foldRight f b (h :. t) = f h (foldRight f b t)
+foldRight f b (headElement :. tailElements) = f headElement (foldRight f b tailElements)
 
 foldLeft :: (b -> a -> b) -> b -> List a -> b
 foldLeft _ b Nil      = b
-foldLeft f b (h :. t) = let b' = f b h in b' `seq` foldLeft f b' t
+foldLeft f b (headElement :. tailElements) = let b' = f b headElement in b' `seq` foldLeft f b' tailElements
 
 -- END Helper functions and data types
 
@@ -86,7 +86,7 @@ headOr _ (firstElement :. _) = firstElement
 -- >>> product (1 :. 2 :. 3 :. 4 :. Nil)
 -- 24
 product :: List Int -> Int
-product Nil = 0
+product Nil = 1
 product (firstElement :. remainingElements) = firstElement * (product remainingElements)
 
 -- | Sum the elements of the list.
@@ -137,7 +137,7 @@ map func (firstElement :. remainingElements) = func firstElement :. map func rem
 filter :: (a -> Bool) -> List a -> List a
 filter _ Nil = Nil
 filter func (firstElement :. remainingElements) =
-  if func firstElement == True then
+  if func firstElement == False then
     filter func remainingElements
   else
     firstElement :. filter func remainingElements
@@ -221,7 +221,7 @@ flattenAgain (firstList :. remainingLists) = firstList ++ (flatMap (\x -> x) rem
 -- >>> seqOptional (Empty :. map Full infinity)
 -- Empty
 seqOptional :: List (Optional a) -> Optional (List a)
-seqOptional Nil = Empty
+seqOptional Nil = Full Nil
 seqOptional (Empty :. _) = Empty
 seqOptional (Full firstElement :. remainingElements) =
   case seqOptional remainingElements of
@@ -284,8 +284,7 @@ lengthGT4 _ = False
 --
 -- prop> \x -> let types = x :: Int in reverse (x :. Nil) == x :. Nil
 reverse :: List a -> List a
-reverse Nil = Nil
-reverse (firstElement :. remainingElements) = (reverse remainingElements) ++ (firstElement :. Nil)
+reverse = foldLeft (flip (:.)) Nil
 
 -- | Produce an infinite `List` that seeds with the given value at its head,
 -- then runs the given function for subsequent elements
