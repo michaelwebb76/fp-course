@@ -80,7 +80,7 @@ bindOptional func (Full x) = func x
 -- 0
 optional :: (a -> b) -> b -> Optional a -> b
 optional _ y Empty = y
-optional funcXtoY y (Full x) = funcXtoY x
+optional funcXtoY _ (Full x) = funcXtoY x
 
 applyOptional :: Optional (a -> b) -> Optional a -> Optional b
 applyOptional f a = bindOptional (\f' -> mapOptional f' a) f
