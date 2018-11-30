@@ -105,7 +105,7 @@ instance Applicative ((->) t) where
   pure x = \_ -> x
 
   (<*>) :: (t -> (a -> b)) -> (t -> a) -> (t -> b)
-  (<*>) funcTtoFuncAtoB funcTtoA = \x -> (funcTtoFuncAtoB x) (funcTtoA x)
+  (<*>) funcTtoFuncAtoB funcTtoA = \x -> funcTtoFuncAtoB x (funcTtoA x)
 
 
 -- | Apply a binary function in the environment.
@@ -128,7 +128,7 @@ instance Applicative ((->) t) where
 -- >>> lift2 (+) length sum (listh [4,5,6])
 -- 18
 lift2 :: Applicative f => (a -> b -> c) -> f a -> f b -> f c
-lift2 functionAandBtoC applicativeA = (<*>) ((<$>) functionAandBtoC applicativeA)
+lift2 = ((<*>) .) . (<$>)
 
 -- | Apply a ternary function in the environment.
 -- /can be written using `lift2` and `(<*>)`./
@@ -154,8 +154,7 @@ lift2 functionAandBtoC applicativeA = (<*>) ((<$>) functionAandBtoC applicativeA
 -- >>> lift3 (\a b c -> a + b + c) length sum product (listh [4,5,6])
 -- 138
 lift3 :: Applicative f => (a -> b -> c -> d) -> f a -> f b -> f c -> f d
-lift3 functionAandBandCtoD applicativeA applicativeB =
-   (<*>) ((functionAandBandCtoD <$> applicativeA) <*> applicativeB)
+lift3 = (((<*>) .) .) . lift2
 
 -- | Apply a quaternary function in the environment.
 -- /can be written using `lift3` and `(<*>)`./
@@ -181,8 +180,7 @@ lift3 functionAandBandCtoD applicativeA applicativeB =
 -- >>> lift4 (\a b c d -> a + b + c + d) length sum product (sum . filter even) (listh [4,5,6])
 -- 148
 lift4 :: Applicative f => (a -> b -> c -> d -> e) -> f a -> f b -> f c -> f d -> f e
-lift4 functionAandBandCandDtoE applicativeA applicativeB applicativeC =
-  (<*>) (((functionAandBandCandDtoE <$> applicativeA) <*> applicativeB) <*> applicativeC)
+lift4 = ((((<*>) .) .) .) . lift3
 
 -- | Apply a nullary function in the environment.
 lift0 :: Applicative f => a -> f a
@@ -221,7 +219,7 @@ lift1 = (<$>)
 --
 -- prop> \x y -> Full x *> Full y == Full y
 (*>) :: Applicative f => f a -> f b -> f b
-(*>) = lift2 (\_ -> \b -> b)
+(*>) = lift2 (const id)
 
 
 -- | Apply, discarding the value of the second argument.
@@ -243,7 +241,7 @@ lift1 = (<$>)
 --
 -- prop> \x y -> Full x <* Full y == Full x
 (<*) :: Applicative f => f b -> f a -> f b
-(<*) = lift2 (\a -> \_ -> a)
+(<*) = lift2 const
 
 -- | Sequences a list of structures to a structure of list.
 --
@@ -263,9 +261,7 @@ lift1 = (<$>)
 -- [60,8]
 sequence :: Applicative f => List (f a) -> f (List a)
 sequence Nil = pure Nil
-sequence (firstElement :. Nil) = lift1 (\a  -> (a :. Nil)) firstElement
-sequence (firstElement :. secondElement :. Nil) = lift2 (\a -> \b -> (a :. b :. Nil)) firstElement secondElement
-sequence (firstElement :. secondElement :. thirdElement :. Nil) = lift3 (\a -> \b -> \c -> (a :. b :. c :. Nil)) firstElement secondElement thirdElement
+sequence (firstElement :. remainingElements) = ((:.) <$> firstElement) <*> (sequence remainingElements)
 
 
 
@@ -286,8 +282,7 @@ sequence (firstElement :. secondElement :. thirdElement :. Nil) = lift3 (\a -> \
 -- >>> replicateA 3 ('a' :. 'b' :. 'c' :. Nil)
 -- ["aaa","aab","aac","aba","abb","abc","aca","acb","acc","baa","bab","bac","bba","bbb","bbc","bca","bcb","bcc","caa","cab","cac","cba","cbb","cbc","cca","ccb","ccc"]
 replicateA :: Applicative f => Int -> f a -> f (List a)
-replicateA =
-  error "todo: Course.Applicative#replicateA"
+replicateA = (sequence .) . replicate
 
 -- | Filter a list with a predicate that produces an effect.
 --
@@ -309,13 +304,17 @@ replicateA =
 -- >>> filtering (const $ True :. True :.  Nil) (1 :. 2 :. 3 :. Nil)
 -- [[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3]]
 --
-filtering ::
-  Applicative f =>
-  (a -> f Bool)
-  -> List a
-  -> f (List a)
-filtering =
-  error "todo: Course.Applicative#filtering"
+filtering :: Applicative f => (a -> f Bool) -> List a -> f (List a)
+filtering _ Nil = pure Nil
+filtering func (firstElement :. Nil) =
+  (\x ->
+    case x of
+      True ->
+        (firstElement :. Nil)
+      False ->
+        Nil
+  ) <$> (func firstElement)
+filtering func (firstElement :. remainingElements) = ((++) <$> (filtering func (firstElement :. Nil))) <*> (filtering func remainingElements)
 
 -----------------------
 -- SUPPORT LIBRARIES --
