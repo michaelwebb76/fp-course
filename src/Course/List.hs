@@ -1,7 +1,7 @@
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE NoImplicitPrelude   #-}
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 -- + Complete the 10 exercises below by filling out the function bodies.
 --   Replace the function bodies (error "todo: ...") with an appropriate
@@ -14,13 +14,12 @@
 module Course.List where
 
 import qualified Control.Applicative as A
-import qualified Control.Monad       as M
-import           Course.Core
-import           Course.Optional
-import qualified Numeric             as N
-import qualified Prelude             as P
-import qualified System.Environment  as E
-
+import qualified Control.Monad as M
+import Course.Core
+import Course.Optional
+import qualified Numeric as N
+import qualified System.Environment as E
+import qualified Prelude as P
 
 -- $setup
 -- >>> import Test.QuickCheck
@@ -31,8 +30,8 @@ import qualified System.Environment  as E
 -- BEGIN Helper functions and data types
 
 -- The custom list type
-data List t =
-  Nil
+data List t
+  = Nil
   | t :. List t
   deriving (Eq, Ord)
 
@@ -46,16 +45,16 @@ instance Show t => Show (List t) where
 infinity ::
   List Integer
 infinity =
-  let inf x = x :. inf (x+1)
-  in inf 0
+  let inf x = x :. inf (x + 1)
+   in inf 0
 
 -- functions over List that you may consider using
 foldRight :: (a -> b -> b) -> b -> List a -> b
-foldRight _ b Nil      = b
+foldRight _ b Nil = b
 foldRight f b (headElement :. tailElements) = f headElement (foldRight f b tailElements)
 
 foldLeft :: (b -> a -> b) -> b -> List a -> b
-foldLeft _ b Nil      = b
+foldLeft _ b Nil = b
 foldLeft f b (headElement :. tailElements) = let b' = f b headElement in b' `seq` foldLeft f b' tailElements
 
 -- END Helper functions and data types
@@ -137,10 +136,9 @@ map func (firstElement :. remainingElements) = func firstElement :. map func rem
 filter :: (a -> Bool) -> List a -> List a
 filter _ Nil = Nil
 filter func (firstElement :. remainingElements) =
-  if func firstElement == False then
-    filter func remainingElements
-  else
-    firstElement :. filter func remainingElements
+  if func firstElement == False
+    then filter func remainingElements
+    else firstElement :. filter func remainingElements
 
 -- | Append two lists to a new list.
 --
@@ -159,7 +157,6 @@ filter func (firstElement :. remainingElements) =
 (++) (firstList) Nil = firstList
 (++) Nil (secondList) = secondList
 (++) (firstElementOfFirstList :. remainingElementsOfFirstList) (firstElementOfSecondList :. remainingElementsOfSecondList) = (firstElementOfFirstList :. (remainingElementsOfFirstList ++ (firstElementOfSecondList :. Nil)) ++ remainingElementsOfSecondList)
-
 
 infixr 5 ++
 
@@ -187,7 +184,7 @@ flatten (firstList :. remainingLists) = firstList ++ flatten remainingLists
 -- prop> \x -> headOr x (flatMap id (y :. infinity :. Nil)) == headOr 0 y
 --
 -- prop> \x -> flatMap id (x :: List (List Int)) == flatten x
-flatMap :: (a -> List b)  -> List a -> List b
+flatMap :: (a -> List b) -> List a -> List b
 flatMap func list = flatten (map func list)
 
 -- | Flatten a list of lists to a list (again).
@@ -315,42 +312,42 @@ notReverse (_ :. remainingElements) = remainingElements
 largeList ::
   List Int
 largeList =
-  listh [1..50000]
+  listh [1 .. 50000]
 
 hlist ::
-  List a
-  -> [a]
+  List a ->
+  [a]
 hlist =
   foldRight (:) []
 
 listh ::
-  [a]
-  -> List a
+  [a] ->
+  List a
 listh =
   P.foldr (:.) Nil
 
 putStr ::
-  Chars
-  -> IO ()
+  Chars ->
+  IO ()
 putStr =
   P.putStr . hlist
 
 putStrLn ::
-  Chars
-  -> IO ()
+  Chars ->
+  IO ()
 putStrLn =
   P.putStrLn . hlist
 
 readFile ::
-  FilePath
-  -> IO Chars
+  FilePath ->
+  IO Chars
 readFile =
   P.fmap listh . P.readFile . hlist
 
 writeFile ::
-  FilePath
-  -> Chars
-  -> IO ()
+  FilePath ->
+  Chars ->
+  IO ()
 writeFile n s =
   P.writeFile (hlist n) (hlist s)
 
@@ -366,213 +363,211 @@ getArgs =
 
 isPrefixOf ::
   Eq a =>
-  List a
-  -> List a
-  -> Bool
+  List a ->
+  List a ->
+  Bool
 isPrefixOf Nil _ =
   True
-isPrefixOf _  Nil =
+isPrefixOf _ Nil =
   False
-isPrefixOf (x:.xs) (y:.ys) =
+isPrefixOf (x :. xs) (y :. ys) =
   x == y && isPrefixOf xs ys
 
 isEmpty ::
-  List a
-  -> Bool
+  List a ->
+  Bool
 isEmpty Nil =
   True
-isEmpty (_:._) =
+isEmpty (_ :. _) =
   False
 
 span ::
-  (a -> Bool)
-  -> List a
-  -> (List a, List a)
+  (a -> Bool) ->
+  List a ->
+  (List a, List a)
 span p x =
   (takeWhile p x, dropWhile p x)
 
 break ::
-  (a -> Bool)
-  -> List a
-  -> (List a, List a)
+  (a -> Bool) ->
+  List a ->
+  (List a, List a)
 break p =
   span (not . p)
 
 dropWhile ::
-  (a -> Bool)
-  -> List a
-  -> List a
+  (a -> Bool) ->
+  List a ->
+  List a
 dropWhile _ Nil =
   Nil
-dropWhile p xs@(x:.xs') =
+dropWhile p xs@(x :. xs') =
   if p x
-    then
-      dropWhile p xs'
-    else
-      xs
+    then dropWhile p xs'
+    else xs
 
 takeWhile ::
-  (a -> Bool)
-  -> List a
-  -> List a
+  (a -> Bool) ->
+  List a ->
+  List a
 takeWhile _ Nil =
   Nil
-takeWhile p (x:.xs) =
+takeWhile p (x :. xs) =
   if p x
-    then
-      x :. takeWhile p xs
-    else
-      Nil
+    then x :. takeWhile p xs
+    else Nil
 
 zip ::
-  List a
-  -> List b
-  -> List (a, b)
+  List a ->
+  List b ->
+  List (a, b)
 zip =
   zipWith (,)
 
 zipWith ::
-  (a -> b -> c)
-  -> List a
-  -> List b
-  -> List c
-zipWith f (a:.as) (b:.bs) =
+  (a -> b -> c) ->
+  List a ->
+  List b ->
+  List c
+zipWith f (a :. as) (b :. bs) =
   f a b :. zipWith f as bs
-zipWith _ _  _ =
+zipWith _ _ _ =
   Nil
 
 unfoldr ::
-  (a -> Optional (b, a))
-  -> a
-  -> List b
-unfoldr f b  =
+  (a -> Optional (b, a)) ->
+  a ->
+  List b
+unfoldr f b =
   case f b of
     Full (a, z) -> a :. unfoldr f z
     Empty -> Nil
 
 lines ::
-  Chars
-  -> List Chars
+  Chars ->
+  List Chars
 lines =
   listh . P.fmap listh . P.lines . hlist
 
 unlines ::
-  List Chars
-  -> Chars
+  List Chars ->
+  Chars
 unlines =
   listh . P.unlines . hlist . map hlist
 
 words ::
-  Chars
-  -> List Chars
+  Chars ->
+  List Chars
 words =
   listh . P.fmap listh . P.words . hlist
 
 unwords ::
-  List Chars
-  -> Chars
+  List Chars ->
+  Chars
 unwords =
   listh . P.unwords . hlist . map hlist
 
 listOptional ::
-  (a -> Optional b)
-  -> List a
-  -> List b
+  (a -> Optional b) ->
+  List a ->
+  List b
 listOptional _ Nil =
   Nil
-listOptional f (h:.t) =
+listOptional f (h :. t) =
   let r = listOptional f t
-  in case f h of
-       Empty -> r
-       Full q -> q :. r
+   in case f h of
+        Empty -> r
+        Full q -> q :. r
 
 any ::
-  (a -> Bool)
-  -> List a
-  -> Bool
+  (a -> Bool) ->
+  List a ->
+  Bool
 any p =
   foldRight ((||) . p) False
 
 all ::
-  (a -> Bool)
-  -> List a
-  -> Bool
+  (a -> Bool) ->
+  List a ->
+  Bool
 all p =
   foldRight ((&&) . p) True
 
 or ::
-  List Bool
-  -> Bool
+  List Bool ->
+  Bool
 or =
   any id
 
 and ::
-  List Bool
-  -> Bool
+  List Bool ->
+  Bool
 and =
   all id
 
 elem ::
   Eq a =>
-  a
-  -> List a
-  -> Bool
+  a ->
+  List a ->
+  Bool
 elem x =
   any (== x)
 
 notElem ::
   Eq a =>
-  a
-  -> List a
-  -> Bool
+  a ->
+  List a ->
+  Bool
 notElem x =
   all (/= x)
 
-permutations
-  :: List a -> List (List a)
+permutations ::
+  List a -> List (List a)
 permutations xs0 =
   let perms Nil _ =
         Nil
-      perms (t:.ts) is =
+      perms (t :. ts) is =
         let interleave' _ Nil r =
               (ts, r)
-            interleave' f (y:.ys) r =
-               let (us,zs) = interleave' (f . (y:.)) ys r
-               in  (y:.us, f (t:.y:.us):.zs)
-        in foldRight (\xs -> snd . interleave' id xs) (perms ts (t:.is)) (permutations is)
-  in xs0 :. perms xs0 Nil
+            interleave' f (y :. ys) r =
+              let (us, zs) = interleave' (f . (y :.)) ys r
+               in (y :. us, f (t :. y :. us) :. zs)
+         in foldRight (\xs -> snd . interleave' id xs) (perms ts (t :. is)) (permutations is)
+   in xs0 :. perms xs0 Nil
 
 intersectBy ::
-  (a -> b -> Bool)
-  -> List a
-  -> List b
-  -> List a
+  (a -> b -> Bool) ->
+  List a ->
+  List b ->
+  List a
 intersectBy e xs ys =
   filter (\x -> any (e x) ys) xs
 
 take ::
   (Num n, Ord n) =>
-  n
-  -> List a
-  -> List a
-take n _  | n <= 0 =
-  Nil
+  n ->
+  List a ->
+  List a
+take n _
+  | n <= 0 =
+    Nil
 take _ Nil =
   Nil
-take n (x:.xs) =
+take n (x :. xs) =
   x :. take (n - 1) xs
 
 drop ::
   (Num n, Ord n) =>
-  n
-  -> List a
-  -> List a
-drop n xs | n <= 0 =
-  xs
+  n ->
+  List a ->
+  List a
+drop n xs
+  | n <= 0 =
+    xs
 drop _ Nil =
   Nil
-drop n (_:.xs) =
-  drop (n-1) xs
+drop n (_ :. xs) =
+  drop (n -1) xs
 
 repeat :: a -> List a
 repeat x =
@@ -584,49 +579,49 @@ replicate n x =
 
 reads ::
   P.Read a =>
-  Chars
-  -> Optional (a, Chars)
+  Chars ->
+  Optional (a, Chars)
 reads s =
   case P.reads (hlist s) of
     [] -> Empty
-    ((a, q):_) -> Full (a, listh q)
+    ((a, q) : _) -> Full (a, listh q)
 
 read ::
   P.Read a =>
-  Chars
-  -> Optional a
+  Chars ->
+  Optional a
 read =
   mapOptional fst . reads
 
 readHexs ::
   (Eq a, Num a) =>
-  Chars
-  -> Optional (a, Chars)
+  Chars ->
+  Optional (a, Chars)
 readHexs s =
   case N.readHex (hlist s) of
     [] -> Empty
-    ((a, q):_) -> Full (a, listh q)
+    ((a, q) : _) -> Full (a, listh q)
 
 readHex ::
   (Eq a, Num a) =>
-  Chars
-  -> Optional a
+  Chars ->
+  Optional a
 readHex =
   mapOptional fst . readHexs
 
 readFloats ::
   (RealFrac a) =>
-  Chars
-  -> Optional (a, Chars)
+  Chars ->
+  Optional (a, Chars)
 readFloats s =
   case N.readSigned N.readFloat (hlist s) of
     [] -> Empty
-    ((a, q):_) -> Full (a, listh q)
+    ((a, q) : _) -> Full (a, listh q)
 
 readFloat ::
   (RealFrac a) =>
-  Chars
-  -> Optional a
+  Chars ->
+  Optional a
 readFloat =
   mapOptional fst . readFloats
 
@@ -641,21 +636,21 @@ type FilePath =
   List Char
 
 strconcat ::
-  [Chars]
-  -> P.String
+  [Chars] ->
+  P.String
 strconcat =
   P.concatMap hlist
 
 stringconcat ::
-  [P.String]
-  -> P.String
+  [P.String] ->
+  P.String
 stringconcat =
   P.concat
 
 show' ::
   Show a =>
-  a
-  -> List Char
+  a ->
+  List Char
 show' =
   listh . show
 
@@ -664,13 +659,17 @@ instance P.Functor List where
     listh . P.fmap f . hlist
 
 instance A.Applicative List where
+
   (<*>) =
     M.ap
+
   pure =
     (:. Nil)
 
 instance P.Monad List where
+
   (>>=) =
     flip flatMap
+
   return =
     (:. Nil)
